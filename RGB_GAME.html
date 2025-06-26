@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RGB 색상 맞추기 게임</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: "Inter", sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        /* 버튼 그림자 및 효과 */
+        .game-button {
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .game-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+        .game-button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        /* 메시지 박스 스타일 */
+        .message-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            text-align: center;
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -60%); }
+            to { opacity: 1; transform: translate(-50%, -50%); }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-100 to-purple-100">
+
+    <div id="game-container" class="bg-white p-8 rounded-2xl shadow-xl max-w-lg w-full text-center flex flex-col items-center">
+        <h1 class="text-4xl font-extrabold mb-6 text-gray-800">RGB 색상 맞추기</h1>
+
+        <!-- 게임 정보 섹션 -->
+        <div class="flex justify-around w-full mb-6 text-lg font-semibold text-gray-700">
+            <div class="flex flex-col items-center">
+                <span>점수:</span>
+                <span id="score" class="text-blue-600 text-2xl">0</span>
+            </div>
+            <div class="flex flex-col items-center">
+                <span>단계:</span>
+                <span id="stage" class="text-purple-600 text-2xl">1</span>
+            </div>
+            <div class="flex flex-col items-center">
+                <span>시간:</span>
+                <span id="time" class="text-green-600 text-2xl">0초</span>
+            </div>
+        </div>
+
+        <!-- 목표 RGB 값 표시 -->
+        <div class="text-3xl font-bold mb-8 p-4 bg-gray-100 rounded-lg w-full sm:w-3/4 md:w-2/3 lg:w-1/2 text-gray-800">
+            RGB(<span id="target-r">?</span>, <span id="target-g">?</span>, <span id="target-b">?</span>)
+        </div>
+
+        <!-- 색상 선택 버튼 컨테이너 -->
+        <div id="color-options" class="flex flex-col md:flex-row justify-center items-center w-full space-y-4 md:space-y-0 md:space-x-4 mb-8">
+            <button class="game-button option-button w-full md:w-1/3 h-24 rounded-xl border-4 border-gray-200 hover:border-blue-300 focus:outline-none focus:ring-4 focus:ring-blue-200"></button>
+            <button class="game-button option-button w-full md:w-1/3 h-24 rounded-xl border-4 border-gray-200 hover:border-blue-300 focus:outline-none focus:ring-4 focus:ring-blue-200"></button>
+            <button class="game-button option-button w-full md:w-1/3 h-24 rounded-xl border-4 border-gray-200 hover:border-blue-300 focus:outline-none focus:ring-4 focus:ring-blue-200"></button>
+        </div>
+
+        <!-- 게임 제어 버튼 -->
+        <div class="flex space-x-4">
+            <button id="start-button" class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white py-3 px-8 rounded-full text-xl font-bold shadow-lg hover:from-blue-600 hover:to-indigo-700 transition duration-300 transform hover:scale-105">게임 시작</button>
+            <button id="restart-button" class="bg-gradient-to-r from-red-500 to-pink-600 text-white py-3 px-8 rounded-full text-xl font-bold shadow-lg hover:from-red-600 hover:to-pink-700 transition duration-300 transform hover:scale-105 hidden">재시작</button>
+        </div>
+
+        <!-- 최고 기록 섹션 -->
+        <div class="mt-8 pt-6 border-t-2 border-gray-200 w-full">
+            <h2 class="text-2xl font-bold mb-4 text-gray-700">최고 기록</h2>
+            <p class="text-xl text-gray-600">점수: <span id="high-score-value" class="font-bold text-green-700">0</span></p>
+            <p class="text-xl text-gray-600">시간: <span id="high-time-value" class="font-bold text-green-700">0초</span></p>
+        </div>
+
+        <!-- 재작자명 섹션 추가 -->
+        <div class="mt-8 text-sm text-gray-500">
+            재작자명 :김현 그리고 피은혜 사랑해
+        </div>
+    </div>
+
+    <script>
+        // 게임 상태 변수
+        let score = 0;
+        let stage = 1;
+        let timer = 0;
+        let timerInterval;
+        let targetRGB = { r: 0, g: 0, b: 0 };
+        let optionsRGB = [];
+        let highScore = { score: 0, time: 0 };
+
+        // DOM 요소 가져오기
+        const scoreDisplay = document.getElementById('score');
+        const stageDisplay = document.getElementById('stage');
+        const timeDisplay = document.getElementById('time');
+        const targetRDisplay = document.getElementById('target-r');
+        const targetGDisplay = document.getElementById('target-g');
+        const targetBDisplay = document.getElementById('target-b');
+        const colorOptionButtons = document.querySelectorAll('.option-button');
+        const startButton = document.getElementById('start-button');
+        const restartButton = document.getElementById('restart-button');
+        const highScoreValueDisplay = document.getElementById('high-score-value');
+        const highTimeValueDisplay = document.getElementById('high-time-value');
+        const gameContainer = document.getElementById('game-container');
+
+        // 메시지 박스 표시 함수
+        function showMessageBox(title, message, buttonText, onButtonClick) {
+            // 기존 메시지 박스가 있다면 제거
+            const existingBox = document.querySelector('.message-box');
+            if (existingBox) {
+                existingBox.remove();
+            }
+
+            const messageBox = document.createElement('div');
+            messageBox.className = 'message-box';
+            messageBox.innerHTML = `
+                <h3 class="text-2xl font-bold mb-4 text-gray-800">${title}</h3>
+                <p class="text-lg text-gray-700 mb-6">${message}</p>
+                <button id="message-box-button" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-6 rounded-full text-lg font-semibold transition duration-300">${buttonText}</button>
+            `;
+            document.body.appendChild(messageBox);
+
+            document.getElementById('message-box-button').addEventListener('click', () => {
+                messageBox.remove();
+                if (onButtonClick) {
+                    onButtonClick();
+                }
+            });
+        }
+
+        // 로컬 스토리지에서 최고 기록 불러오기
+        function loadHighScore() {
+            const storedHighScore = localStorage.getItem('rgbGameHighScore');
+            if (storedHighScore) {
+                highScore = JSON.parse(storedHighScore);
+                highScoreValueDisplay.textContent = highScore.score;
+                highTimeValueDisplay.textContent = `${highScore.time}초`;
+            }
+        }
+
+        // 로컬 스토리지에 최고 기록 저장하기
+        function saveHighScore() {
+            localStorage.setItem('rgbGameHighScore', JSON.stringify(highScore));
+        }
+
+        // 난이도에 따른 오차 퍼센티지 반환
+        function getErrorPercentage(currentStage) {
+            // 각 단계별 오차 퍼센티지를 5배로 증가
+            if (currentStage === 1) return 10 * 5; // 50%
+            if (currentStage === 2) return 8 * 5;  // 40%
+            if (currentStage === 3) return 6 * 5;  // 30%
+            if (currentStage === 4) return 4 * 5;  // 20%
+            return 2 * 5; // 5단계 이상은 10%
+        }
+
+        // 랜덤 RGB 값 생성 (0-255 범위)
+        function getRandomRGBValue() {
+            return Math.floor(Math.random() * 256);
+        }
+
+        // 오차를 적용한 RGB 값 생성
+        function getOffsetRGB(targetR, targetG, targetB, percentage) {
+            const offset = (val) => {
+                // 오차 범위를 0-255 내에서 유지
+                const delta = Math.floor(val * percentage / 100);
+                const sign = Math.random() < 0.5 ? 1 : -1;
+                let newVal = val + sign * (Math.floor(Math.random() * (delta + 1))); // 최소 0에서 최대 delta까지의 차이
+                return Math.min(255, Math.max(0, newVal));
+            };
+
+            let newR, newG, newB;
+            let attempts = 0;
+            const maxAttempts = 100; // 무한 루프 방지를 위한 최대 시도 횟수
+
+            do {
+                newR = offset(targetR);
+                newG = offset(targetG);
+                newB = offset(targetB);
+                attempts++;
+            } while (attempts < maxAttempts && newR === targetR && newG === targetG && newB === targetB);
+
+            // 만약 충분히 다른 색을 찾지 못했다면 강제로 한 값만 변경
+            // 오차 범위가 커지므로 이 로직은 거의 사용되지 않을 수 있지만, 안전을 위해 유지
+            if (newR === targetR && newG === targetG && newB === targetB) {
+                if (Math.random() < 0.33) {
+                    newR = offset(targetR + (targetR > 127 ? -10 : 10));
+                } else if (Math.random() < 0.66) {
+                    newG = offset(targetG + (targetG > 127 ? -10 : 10));
+                } else {
+                    newB = offset(targetB + (targetB > 127 ? -10 : 10));
+                }
+            }
+
+            return { r: newR, g: newG, b: newB };
+        }
+
+
+        // 새로운 라운드 설정
+        function generateNewRound() {
+            // 목표 RGB 생성
+            targetRGB = {
+                r: getRandomRGBValue(),
+                g: getRandomRGBValue(),
+                b: getRandomRGBValue()
+            };
+
+            // 목표 RGB 텍스트 업데이트
+            targetRDisplay.textContent = targetRGB.r;
+            targetGDisplay.textContent = targetRGB.g;
+            targetBDisplay.textContent = targetRGB.b;
+
+            // 오차 퍼센티지 가져오기
+            const errorPercentage = getErrorPercentage(stage);
+
+            // 옵션 RGB 생성 (정답 1개, 오답 2개)
+            optionsRGB = [];
+            optionsRGB.push(targetRGB); // 정답 추가
+
+            let incorrect1, incorrect2;
+            let attempts = 0;
+            const maxAttemptsForUnique = 100;
+
+            // 첫 번째 오답 생성
+            do {
+                incorrect1 = getOffsetRGB(targetRGB.r, targetRGB.g, targetRGB.b, errorPercentage);
+                attempts++;
+            } while (attempts < maxAttemptsForUnique &&
+                     (incorrect1.r === targetRGB.r && incorrect1.g === targetRGB.g && incorrect1.b === targetRGB.b));
+            optionsRGB.push(incorrect1);
+
+            // 두 번째 오답 생성
+            attempts = 0;
+            do {
+                incorrect2 = getOffsetRGB(targetRGB.r, targetRGB.g, targetRGB.b, errorPercentage);
+                attempts++;
+            } while (attempts < maxAttemptsForUnique &&
+                     ((incorrect2.r === targetRGB.r && incorrect2.g === targetRGB.g && incorrect2.b === targetRGB.b) ||
+                      (incorrect2.r === incorrect1.r && incorrect2.g === incorrect1.g && incorrect2.b === incorrect1.b)));
+            optionsRGB.push(incorrect2);
+
+            // 옵션 순서 섞기
+            optionsRGB.sort(() => Math.random() - 0.5);
+
+            // 버튼에 색상 적용
+            colorOptionButtons.forEach((button, index) => {
+                const rgb = optionsRGB[index];
+                button.style.backgroundColor = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+                button.dataset.rgb = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`; // 정답 확인을 위해 data 속성 저장
+            });
+
+            // 점수 및 단계 표시 업데이트
+            scoreDisplay.textContent = score;
+            stageDisplay.textContent = stage;
+        }
+
+        // 정답 확인
+        function checkAnswer(event) {
+            // 게임 시작 전에는 클릭 무시
+            if (startButton.classList.contains('hidden') === false && restartButton.classList.contains('hidden') === true) {
+                return;
+            }
+
+            const clickedColor = event.target.dataset.rgb;
+            const targetColor = `rgb(${targetRGB.r}, ${targetRGB.g}, ${targetRGB.b})`;
+
+            if (clickedColor === targetColor) {
+                score++;
+                stage++;
+                generateNewRound();
+            } else {
+                // 오답 시 게임 종료
+                clearInterval(timerInterval);
+                let message = `최종 점수: ${score}점, 소요 시간: ${timer}초`;
+                if (score > highScore.score || (score === highScore.score && timer < highScore.time)) {
+                    highScore = { score: score, time: timer };
+                    saveHighScore();
+                    message += `<br><br>새로운 최고 기록입니다!`;
+                }
+                showMessageBox('게임 오버!', message, '재시작', resetGame);
+                restartButton.classList.remove('hidden'); // 재시작 버튼 표시
+            }
+        }
+
+        // 게임 시작 함수
+        function startGame() {
+            resetGame(); // 게임 상태 초기화
+            timerInterval = setInterval(() => {
+                timer++;
+                timeDisplay.textContent = `${timer}초`;
+            }, 1000);
+            startButton.classList.add('hidden'); // 시작 버튼 숨기기
+            restartButton.classList.add('hidden'); // 재시작 버튼 숨기기 (시작 시)
+        }
+
+        // 게임 초기화 (재시작) 함수
+        function resetGame() {
+            clearInterval(timerInterval);
+            score = 0;
+            stage = 1;
+            timer = 0;
+            timeDisplay.textContent = '0초';
+            loadHighScore(); // 최고 기록 다시 불러오기
+            generateNewRound();
+            startButton.classList.remove('hidden'); // 시작 버튼 다시 표시
+            restartButton.classList.add('hidden'); // 재시작 버튼 숨기기
+        }
+
+        // 이벤트 리스너 등록
+        startButton.addEventListener('click', startGame);
+        restartButton.addEventListener('click', resetGame);
+        colorOptionButtons.forEach(button => {
+            button.addEventListener('click', checkAnswer);
+        });
+
+        // 페이지 로드 시 초기 게임 상태 설정 및 최고 기록 불러오기
+        window.onload = function() {
+            loadHighScore();
+            generateNewRound(); // 초기 색상 표시
+        };
+    </script>
+</body>
+</html>
+
