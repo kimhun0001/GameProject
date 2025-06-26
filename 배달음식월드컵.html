@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>최강의 배달 야식 월드컵</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Jua', sans-serif;
+        }
+        .card {
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+        .card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 10px 25px -5px rgba(251, 191, 36, 0.4), 0 8px 10px -6px rgba(251, 191, 36, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white flex flex-col items-center justify-between min-h-screen p-4">
+
+    <div id="game-container" class="w-full max-w-6xl text-center">
+        <h1 id="main-title" class="text-4xl md:text-5xl font-bold text-amber-300 mb-2">최강의 배달 야식 월드컵!</h1>
+        <h2 id="round-title" class="text-2xl md:text-3xl text-white mb-6">16강</h2>
+
+        <!-- 왼쪽/오른쪽 선택 레이아웃 -->
+        <div id="match-up-container" class="flex flex-row justify-center items-center gap-4 sm:gap-6 lg:gap-8">
+            <!-- 후보 1 (왼쪽) -->
+            <div id="contender1" class="card bg-gray-800 rounded-lg shadow-lg w-[45%] md:w-2/5 max-w-md cursor-pointer" onclick="select(0)">
+                <img id="img1" src="https://placehold.co/600x400/334155/e2e8f0?text=로딩중..." alt="후보 1" class="w-full h-40 sm:h-64 md:h-80 object-cover rounded-t-lg">
+                <p id="name1" class="text-2xl sm:text-3xl py-4">후보 1</p>
+            </div>
+
+            <div class="text-4xl sm:text-5xl font-bold text-amber-400">VS</div>
+
+            <!-- 후보 2 (오른쪽) -->
+            <div id="contender2" class="card bg-gray-800 rounded-lg shadow-lg w-[45%] md:w-2/5 max-w-md cursor-pointer" onclick="select(1)">
+                <img id="img2" src="https://placehold.co/600x400/334155/e2e8f0?text=로딩중..." alt="후보 2" class="w-full h-40 sm:h-64 md:h-80 object-cover rounded-t-lg">
+                <p id="name2" class="text-2xl sm:text-3xl py-4">후보 2</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="winner-container" class="hidden w-full max-w-2xl text-center">
+        <h1 class="text-4xl md:text-6xl font-bold text-amber-300 mb-4">🏆 최종 우승! 🏆</h1>
+        <div class="bg-gray-800 rounded-lg shadow-2xl p-6">
+            <img id="winner-img" src="https://placehold.co/600x400/334155/e2e8f0?text=우승자" alt="우승자" class="w-full h-80 object-cover rounded-lg mb-4">
+            <p id="winner-name" class="text-4xl font-bold text-amber-400 mb-6">우승 메뉴</p>
+            <button onclick="restartGame()" class="bg-amber-500 hover:bg-amber-600 text-gray-900 font-bold py-3 px-8 rounded-full text-xl transition-transform duration-200 hover:scale-110">
+                다시하기
+            </button>
+        </div>
+    </div>
+
+    <footer class="text-gray-500 text-sm mt-8">
+        제작자:김현 Email:kimhun0001@naver.com
+    </footer>
+
+    <script>
+        // 각 후보별로 3개의 이미지 URL을 배열로 저장
+        const contenders = [
+            { name: "치킨", img: ["https://images.unsplash.com/photo-1562967914-608f82629710?q=80&w=800", "https://images.unsplash.com/photo-1585109649234-36a9139c2a21?q=80&w=800", "https://images.unsplash.com/photo-1626645737590-b2a1a09fa2fa?q=80&w=800"] },
+            { name: "피자", img: ["https://images.unsplash.com/photo-1594007654729-407eedc4be65?q=80&w=800", "https://images.unsplash.com/photo-1513104890138-7c749659a591?q=80&w=800", "https://images.unsplash.com/photo-1590947132387-155cc02f3212?q=80&w=800"] },
+            { name: "족발", img: ["https://images.unsplash.com/photo-1627993092283-a7f4b97585c5?q=80&w=800", "https://images.unsplash.com/photo-1549488344-cbb6c34cf08b?q=80&w=800", "https://images.unsplash.com/photo-1618585434444-130c0b8a3a3c?q=80&w=800"] },
+            { name: "떡볶이", img: ["https://images.unsplash.com/photo-1628229443834-9e3f8932915f?q=80&w=800", "https://images.unsplash.com/photo-1576777647209-e8735d7c8052?q=80&w=800", "https://images.unsplash.com/photo-1604467707338-2f1271113175?q=80&w=800"] },
+            { name: "라면", img: ["https://images.unsplash.com/photo-1612929633738-93041611b7a1?q=80&w=800", "https://images.unsplash.com/photo-1585937421612-70a008356fbe?q=80&w=800", "https://images.unsplash.com/photo-1632770238808-8971f8457788?q=80&w=800"] },
+            { name: "햄버거", img: ["https://images.unsplash.com/photo-1571091718767-18b5b1457add?q=80&w=800", "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=800", "https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=800"] },
+            { name: "곱창", img: ["https://images.unsplash.com/photo-1644937704383-6a978593a284?q=80&w=800", "https://images.unsplash.com/photo-1625862362599-f5383a150a6f?q=80&w=800", "https://images.unsplash.com/photo-1582298516146-2d5953935272?q=80&w=800"] },
+            { name: "파전", img: ["https://images.unsplash.com/photo-1628256383794-24583a719714?q=80&w=800", "https://images.unsplash.com/photo-1551025119-7ac2a54a2a16?q=80&w=800", "https://images.unsplash.com/photo-1589955138169-232a50dd2068?q=80&w=800"] },
+            { name: "회", img: ["https://images.unsplash.com/photo-1546953304-5d94e7de6e1e?q=80&w=800", "https://images.unsplash.com/photo-1674992398283-367069226569?q=80&w=800", "https://images.unsplash.com/photo-1612716169233-a9d949439a3f?q=80&w=800"] },
+            { name: "마라탕", img: ["https://images.unsplash.com/photo-1658463990310-5344824559e8?q=80&w=800", "https://images.unsplash.com/photo-1583600908868-9844a49d435f?q=80&w=800", "https://images.unsplash.com/photo-1662998342200-9c88a8a86561?q=80&w=800"] },
+            { name: "샌드위치", img: ["https://images.unsplash.com/photo-1528735602780-2552fd46c7af?q=80&w=800", "https://images.unsplash.com/photo-1481070555726-e2fe8357725c?q=80&w=800", "https://images.unsplash.com/photo-1553909489-cd47e0907910?q=80&w=800"] },
+            { name: "초밥", img: ["https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?q=80&w=800", "https://images.unsplash.com/photo-1611143669185-af224c5e3252?q=80&w=800", "https://images.unsplash.com/photo-1625683244634-58a4a5b283ac?q=80&w=800"] },
+            { name: "감자탕", img: ["https://images.unsplash.com/photo-1588012882236-1601633512a8?q=80&w=800", "https://images.unsplash.com/photo-1631515243349-e0cb75fb8e2a?q=80&w=800", "https://images.unsplash.com/photo-1558220935-7a43583c246c?q=80&w=800"] },
+            { name: "아이스크림", img: ["https://images.unsplash.com/photo-1563805042-7684c019e1cb?q=80&w=800", "https://images.unsplash.com/photo-1580983218554-0a3b68a759b1?q=80&w=800", "https://images.unsplash.com/photo-1579954115545-a95591f28bfc?q=80&w=800"] },
+            { name: "김밥", img: ["https://images.unsplash.com/photo-1623341214825-9f4f963727da?q=80&w=800", "https://images.unsplash.com/photo-1534533940343-2c5f1b13146d?q=80&w=800", "https://images.unsplash.com/photo-1608719949688-9f1d0725b870?q=80&w=800"] },
+            { name: "만두", img: ["https://images.unsplash.com/photo-1627662363124-38a41b3a35d9?q=80&w=800", "https://images.unsplash.com/photo-1534422298391-e4f8c172dddb?q=80&w=800", "https://images.unsplash.com/photo-1499558992017-2af5862b5a1e?q=80&w=800"] },
+        ];
+
+        let currentRoundContenders = [];
+        let nextRoundContenders = [];
+        let round = 16;
+        let matchIndex = 0;
+
+        const roundTitleEl = document.getElementById('round-title');
+        const img1El = document.getElementById('img1');
+        const name1El = document.getElementById('name1');
+        const img2El = document.getElementById('img2');
+        const name2El = document.getElementById('name2');
+        const gameContainer = document.getElementById('game-container');
+        const winnerContainer = document.getElementById('winner-container');
+        const winnerImgEl = document.getElementById('winner-img');
+        const winnerNameEl = document.getElementById('winner-name');
+
+        // 이미지 로딩 및 오류 처리 함수
+        function loadImage(imgElement, imageUrls) {
+            let currentIndex = 0;
+            imgElement.src = imageUrls[currentIndex];
+
+            imgElement.onerror = () => {
+                currentIndex++;
+                if (currentIndex < imageUrls.length) {
+                    imgElement.src = imageUrls[currentIndex];
+                } else {
+                    // 모든 이미지를 불러오지 못한 경우, 최종 대체 이미지 표시
+                    imgElement.src = 'https://placehold.co/600x400/ef4444/ffffff?text=이미지+오류';
+                }
+            };
+        }
+
+        function startGame() {
+            currentRoundContenders = [...contenders].sort(() => Math.random() - 0.5);
+            nextRoundContenders = [];
+            round = currentRoundContenders.length;
+            matchIndex = 0;
+            updateRoundTitle();
+            displayNextMatch();
+        }
+
+        function updateRoundTitle() {
+            if (round === 2) {
+                roundTitleEl.innerText = "결승!";
+            } else if (round < 2) {
+                roundTitleEl.innerText = "";
+            } else {
+                roundTitleEl.innerText = `${round}강`;
+            }
+        }
+        
+        function displayNextMatch() {
+            if (matchIndex < currentRoundContenders.length / 2) {
+                const contender1 = currentRoundContenders[matchIndex * 2];
+                const contender2 = currentRoundContenders[matchIndex * 2 + 1];
+
+                loadImage(img1El, contender1.img);
+                name1El.innerText = contender1.name;
+
+                loadImage(img2El, contender2.img);
+                name2El.innerText = contender2.name;
+            } else {
+                startNextRound();
+            }
+        }
+
+        function select(choice) {
+            const selectedContender = currentRoundContenders[matchIndex * 2 + choice];
+            nextRoundContenders.push(selectedContender);
+            matchIndex++;
+            
+            if (matchIndex < currentRoundContenders.length / 2) {
+                displayNextMatch();
+            } else {
+                startNextRound();
+            }
+        }
+        
+        function startNextRound() {
+            if (nextRoundContenders.length === 1) {
+                showWinner(nextRoundContenders[0]);
+                return;
+            }
+            
+            currentRoundContenders = [...nextRoundContenders];
+            nextRoundContenders = [];
+            round = currentRoundContenders.length;
+            matchIndex = 0;
+
+            updateRoundTitle();
+            displayNextMatch();
+        }
+
+        function showWinner(winner) {
+            gameContainer.style.display = 'none';
+            winnerContainer.classList.remove('hidden');
+            loadImage(winnerImgEl, winner.img);
+            winnerNameEl.innerText = winner.name;
+        }
+        
+        function restartGame() {
+            winnerContainer.classList.add('hidden');
+            gameContainer.style.display = 'block';
+            startGame();
+        }
+
+        window.onload = startGame;
+    </script>
+</body>
+</html>
+
